@@ -141,6 +141,7 @@ class EmployeeServiceTest {
     @Test
     @DisplayName("createEmployee")
     void createEmployee_ShouldSaveEmployee_ReturnEmployeeResponse() {
+        //Arrange
         Department department = new Department();
         department.setId(100L);
         department.setName("Workers");
@@ -255,6 +256,7 @@ class EmployeeServiceTest {
 
     @Test
     void deleteEmployeeById_ShouldThrowEmployeeNotFoundException_WhenEmployeeDoesNotExist() {
+        //Arrange
         var employeeId = 1L;
 
         when(employeeRepository.findById(employeeId))
@@ -268,4 +270,5 @@ class EmployeeServiceTest {
         verifyNoInteractions(employeeMapper);
     }
 }
+
 
