@@ -269,6 +269,24 @@ class EmployeeServiceTest {
         verify(employeeRepository, times(1)).findById(employeeId);
         verifyNoInteractions(employeeMapper);
     }
+    
+    @Test
+    void ToResponse_ShouldReturnDefaultManagerName_WhenManagerIDIsNull() {
+        //Arrange
+        Department department = new Department();
+        department.setId(100L);
+        department.setName("Workers");
+        var mapper = Mappers.getMapper(EmployeeMapper.class);
+        var manager = new Employee(1L, "Alice", "Manager", 150000L, department, null);
+
+        //Act
+        var result = mapper.toResponse(manager);
+
+        //Assert
+        assertThat(result).isNotNull();
+        assertThat(result.managerName()).isEqualTo("Нет менеджера");
+    }
 }
+
 
 
