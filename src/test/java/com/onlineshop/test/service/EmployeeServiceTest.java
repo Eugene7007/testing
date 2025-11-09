@@ -4,9 +4,11 @@ import com.onlineshop.test.dto.request.EmployeeRequest;
 import com.onlineshop.test.dto.response.EmployeeResponse;
 import com.onlineshop.test.entity.Department;
 import com.onlineshop.test.entity.Employee;
+import com.onlineshop.test.exception.DepartmentNotFoundException;
 import com.onlineshop.test.exception.DuplicateEmployeeException;
 import com.onlineshop.test.exception.EmployeeNotFoundException;
 import com.onlineshop.test.mapper.EmployeeMapper;
+import com.onlineshop.test.repository.DepartmentRepository;
 import com.onlineshop.test.repository.EmployeeRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,8 +30,12 @@ import java.util.Optional;
 class EmployeeServiceTest {
     @Spy
     EmployeeMapper employeeMapper;
+
     @Mock
     EmployeeRepository employeeRepository;
+
+    @Mock
+    DepartmentRepository departmentRepository;
 
     @InjectMocks
     EmployeeService employeeService;
@@ -42,14 +48,29 @@ class EmployeeServiceTest {
     void getAllEmployees_ShouldReturnEmployeeResponses_WhenEmployeeRepositoryIsNotEmpty() {
         //Arrange
         var department = new Department(1L,"Marketing", "Tashkent");
-        var manager = new Employee(1L, "Tom", "tom@mail.ru", "Manager", 1000L, department, null);
-        var e1 = new Employee(2L,"Alice", "alisa@mail.ru","Specialist",500L, department, manager);
-        var e2 = new Employee(3L,"Bob", "bob@mail.ru","Specialist",600L, department, manager);
+        var manager = new Employee(
+                1L, "Tom", "tom@mail.ru", "Manager",
+                1000L, department, null
+        );
+        var e1 = new Employee(
+                2L,"Alice", "alisa@mail.ru","Specialist",
+                500L, department, manager
+        );
+        var e2 = new Employee(
+                3L,"Bob", "bob@mail.ru","Specialist",
+                600L, department, manager
+        );
 
         var employees = List.of(e1, e2);
 
-        var response1 = new EmployeeResponse(2L, "Alice", "alisa@mail.ru","Specialist", 500L, "Marketing", "Tom");
-        var response2 = new EmployeeResponse(2L, "Bob", "bob@mail.ru","Specialist", 600L, "Marketing", "Tom");
+        var response1 = new EmployeeResponse(
+                2L, "Alice", "alisa@mail.ru","Specialist",
+                500L, "Marketing", "Tom"
+        );
+        var response2 = new EmployeeResponse(
+                2L, "Bob", "bob@mail.ru","Specialist",
+                600L, "Marketing", "Tom"
+        );
 
         var responseList = List.of(response1, response2);
 
@@ -98,7 +119,10 @@ class EmployeeServiceTest {
         //Arrange
         var employeeId = 1L;
         var employeeEntity = new Employee();
-        var employeeResponse = new EmployeeResponse(1L, "Bob", "bob@mail.ru","Specialist", 1000L, "Marketing", "Tom");
+        var employeeResponse = new EmployeeResponse(
+                1L, "Bob", "bob@mail.ru","Specialist",
+                1000L, "Marketing", "Tom"
+        );
 
         when(employeeRepository.findById(employeeId))
                 .thenReturn(Optional.of(employeeEntity));
@@ -149,7 +173,11 @@ class EmployeeServiceTest {
         employeeRequest.setSalary(100L);
         employeeRequest.setDepartmentId(1L);
         employeeRequest.setManagerId(2L);
-        var employeeResponse = new EmployeeResponse(1L,"Bob","bob@mail.ru","Specialist",100L,"Marketing","Alice");
+
+        var employeeResponse = new EmployeeResponse(
+                1L,"Bob","bob@mail.ru","Specialist",
+                100L,"Marketing","Alice"
+        );
 
         when(employeeMapper.toEntity(employeeRequest)).thenReturn(employeeEntity);
         when(employeeRepository.existsByEmail(employeeRequest.getEmail())).thenReturn(false);
@@ -188,5 +216,188 @@ class EmployeeServiceTest {
         verify(employeeRepository).existsByEmail(employeeRequest.getEmail());
         verify(employeeRepository, never()).save(any());
         verify(employeeMapper, never()).toResponse(any());
+    }
+
+    @Test
+    @DisplayName("Should update EmployeeEntity and return EmployeeResponse when Employee exists")
+    void updateEmployee_ShouldUpdateEmployeeEntityAndReturnEmployeeResponse_WhenEmployeeExists() {
+        //Arrange
+        var employeeId = 1L;
+        var departmentId = 1L;
+        var managerId = 2L;
+
+        var existingEmployee = new Employee();
+        var manager = new Employee();
+        manager.setId(managerId);
+        manager.setName("Alice");
+
+        var department = new Department();
+        department.setId(departmentId);
+        department.setName("IT");
+
+        var employeeRequest = new EmployeeRequest();
+        employeeRequest.setName("Bob");
+        employeeRequest.setEmail("bob@mail.ru");
+        employeeRequest.setPosition("Specialist");
+        employeeRequest.setSalary(100L);
+        employeeRequest.setDepartmentId(departmentId);
+        employeeRequest.setManagerId(managerId);
+
+        var employeeResponse = new EmployeeResponse(
+                1L,"Bob","bob@mail.ru","Specialist",
+                100L, "IT", "Alice"
+        );
+
+        when(employeeRepository.findById(employeeId)).thenReturn(Optional.of(existingEmployee));
+        when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(department));
+        when(employeeRepository.findById(managerId)).thenReturn(Optional.of(manager));
+        when(employeeRepository.save(existingEmployee)).thenReturn(existingEmployee);
+        when(employeeMapper.toResponse(existingEmployee)).thenReturn(employeeResponse);
+
+        //Act
+        var result = employeeService.updateEmployee(employeeId, employeeRequest);
+
+        //Assert + verify
+        assertThat(result)
+                .isNotNull()
+                .isEqualTo(employeeResponse);
+
+        verify(employeeRepository, times(2)).findById(any());
+        verify(departmentRepository).findById(departmentId);
+        verify(employeeRepository).save(employeeCaptor.capture());
+
+        Employee updatedEmployee = employeeCaptor.getValue();
+
+        assertEquals("Bob", updatedEmployee.getName());
+        assertEquals("bob@mail.ru", updatedEmployee.getEmail());
+        assertEquals("Specialist", updatedEmployee.getPosition());
+        assertEquals(100L, updatedEmployee.getSalary());
+        assertEquals(manager, updatedEmployee.getManager());
+        assertEquals(department, updatedEmployee.getDepartment());
+
+        verify(employeeMapper).toResponse(existingEmployee);
+    }
+
+    @Test
+    @DisplayName("Should throw EmployeeNotFoundException when Employee not exists")
+    void updateEmployee_ShouldThrowEmployeeNotFoundException_WhenEmployeeNotExists() {
+        //Arrange
+        var employeeId = 1L;
+        var employeeRequest = new EmployeeRequest();
+
+        when(employeeRepository.findById(employeeId))
+                .thenReturn(Optional.empty());
+
+        //Assert
+        assertThrows(
+                EmployeeNotFoundException.class,
+                () -> employeeService.updateEmployee(employeeId, employeeRequest)
+        );
+
+        //Verify
+        verify(employeeRepository).findById(employeeId);
+        verifyNoInteractions(employeeMapper);
+    }
+
+    @Test
+    @DisplayName("Should throw DepartmentNotFoundException when Department not exists")
+    void updateEmployee_ShouldThrowDepartmentNotFoundException_WhenDepartmentNotExists() {
+        //Arrange
+        var employeeId = 1L;
+        var departmentId = 1L;
+
+        var existingEmployee = new Employee();
+
+        var employeeRequest = new EmployeeRequest();
+        employeeRequest.setName("Bob");
+        employeeRequest.setEmail("bob@mail.ru");
+        employeeRequest.setPosition("Specialist");
+        employeeRequest.setSalary(100L);
+        employeeRequest.setDepartmentId(departmentId);
+
+        when(employeeRepository.findById(employeeId)).thenReturn(Optional.of(existingEmployee));
+        when(departmentRepository.findById(departmentId)).thenReturn(Optional.empty());
+
+        //Assert
+        assertThrows(
+                DepartmentNotFoundException.class,
+                () -> employeeService.updateEmployee(employeeId, employeeRequest)
+        );
+
+        //Verify
+        verify(employeeRepository).findById(employeeId);
+        verify(departmentRepository).findById(departmentId);
+        verify(employeeRepository, never()).save(existingEmployee);
+        verifyNoInteractions(employeeMapper);
+    }
+
+    @Test
+    @DisplayName("Should throw EmployeeNotFoundException when Manager not exists")
+    void updateEmployee_ShouldThrowEmployeeNotFoundException_WhenManagerNotExists() {
+        //Arrange
+        var employeeId = 1L;
+        var departmentId = 1L;
+        var managerId = 2L;
+
+        var existingEmployee = new Employee();
+        var department = new Department();
+
+        var employeeRequest = new EmployeeRequest();
+        employeeRequest.setName("Bob");
+        employeeRequest.setEmail("bob@mail.ru");
+        employeeRequest.setPosition("Specialist");
+        employeeRequest.setSalary(100L);
+        employeeRequest.setDepartmentId(departmentId);
+        employeeRequest.setManagerId(managerId);
+
+        when(employeeRepository.findById(employeeId)).thenReturn(Optional.of(existingEmployee));
+        when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(department));
+        when(employeeRepository.findById(managerId)).thenReturn(Optional.empty());
+
+        //Assert
+        assertThrows(
+                EmployeeNotFoundException.class,
+                () -> employeeService.updateEmployee(employeeId, employeeRequest)
+        );
+
+        //Verify
+        verify(employeeRepository, times(2)).findById(any());
+        verify(departmentRepository).findById(departmentId);
+        verify(employeeRepository, never()).save(existingEmployee);
+        verifyNoInteractions(employeeMapper);
+    }
+
+    @Test
+    @DisplayName("Should delete when Employee exists")
+    void deleteEmployee_ShouldDelete_WhenEmployeeExists() {
+        //Arrange
+        var id = 1L;
+        var existingEmployee = new Employee();
+
+        when(employeeRepository.findById(id)).thenReturn(Optional.of(existingEmployee));
+
+        //Act
+        employeeService.deleteEmployee(id);
+
+        //Verify
+        verify(employeeRepository).deleteById(id);
+    }
+
+    @Test
+    @DisplayName("Should delete when Employee exists")
+    void deleteEmployee_ShouldThrowEmployeeNotFoundException_WhenEmployeeNotExists() {
+        //Arrange
+        var id = 1L;
+
+        when(employeeRepository.findById(id)).thenReturn(Optional.empty());
+
+        //Act
+        assertThrows(
+                EmployeeNotFoundException.class,
+                () -> employeeService.deleteEmployee(id)
+        );
+
+        //Verify
+        verify(employeeRepository, never()).deleteById(id);
     }
 }
