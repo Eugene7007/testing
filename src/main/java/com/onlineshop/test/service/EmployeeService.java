@@ -2,6 +2,7 @@ package com.onlineshop.test.service;
 
 import com.onlineshop.test.dto.request.EmployeeRequest;
 import com.onlineshop.test.dto.response.EmployeeResponse;
+import com.onlineshop.test.exception.DuplicateEmployeeException;
 import com.onlineshop.test.exception.EmployeeNotFoundException;
 import com.onlineshop.test.mapper.EmployeeMapper;
 import com.onlineshop.test.repository.EmployeeRepository;
@@ -40,6 +41,9 @@ public class EmployeeService {
     // Создание нового сотрудника
     public EmployeeResponse createEmployee(EmployeeRequest request) {
         var employee = employeeMapper.toEntity(request);
+        if (!employeeRepository.existsByEmail(request.getEmail())) {
+            throw new DuplicateEmployeeException(request.getEmail());
+        }
         employeeRepository.save(employee);
 
         return employeeMapper.toResponse(employee);
@@ -52,6 +56,7 @@ public class EmployeeService {
                 .orElseThrow(() -> new EmployeeNotFoundException(id));
 
         existingEmployee.setName(request.getName());
+        existingEmployee.setEmail(request.getEmail());
         existingEmployee.setPosition(request.getPosition());
         existingEmployee.setSalary(request.getSalary());
         existingEmployee.setDepartment(existingEmployee.getDepartment());

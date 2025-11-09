@@ -1,12 +1,6 @@
 package com.onlineshop.test.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,6 +24,10 @@ public class Employee {
     private Long id;
 
     private String name;
+
+    @Column(unique = true)
+    private String email;
+
     private String position;
     private Long salary;
 

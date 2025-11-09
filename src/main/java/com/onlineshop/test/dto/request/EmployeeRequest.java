@@ -11,6 +11,9 @@ public class EmployeeRequest {
     @NotBlank(message = "Имя сотрудника не может быть пустым")
     private String name;
 
+    @NotBlank(message = "Email сотрудника не может быть пустой")
+    private String email;
+
     @NotBlank(message = "Должность сотрудника не может быть пустой")
     private String position;
 
