@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class EmployeeRequest {
 
@@ -21,4 +23,7 @@ public class EmployeeRequest {
     private Long departmentId;
 
     private Long managerId; // Может быть null, если у сотрудника нет менеджера
+
+    public EmployeeRequest(String dilmurod, String seniorBackendDeveloper, BigDecimal ten, Object o, Object o1) {
+    }
 }

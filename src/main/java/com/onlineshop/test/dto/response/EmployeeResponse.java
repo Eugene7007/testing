@@ -4,7 +4,7 @@ public record EmployeeResponse(
         Long id,
         String name,
         String position,
-        Long salary,
+        java.math.BigDecimal salary,
         String departmentName,
         String managerName
 ) {}

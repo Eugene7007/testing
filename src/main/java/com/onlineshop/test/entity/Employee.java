@@ -15,6 +15,8 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @Entity
@@ -40,4 +42,28 @@ public class Employee {
     @ManyToOne
     @JoinColumn(name = "manager_id")
     private Employee manager;
+
+    public void setName(String old) {
+
+    }
+
+    public void setPosition(String oldPos) {
+
+    }
+
+    public void setSalary(BigDecimal one) {
+
+    }
+
+    public boolean getName() {
+        return false;
+    }
+
+    public boolean getPosition() {
+        return false;
+    }
+
+    public boolean getSalary() {
+        return false;
+    }
 }
