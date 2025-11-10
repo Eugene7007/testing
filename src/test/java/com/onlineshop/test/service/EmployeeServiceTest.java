@@ -7,7 +7,6 @@ import com.onlineshop.test.entity.Employee;
 import com.onlineshop.test.exception.EmployeeNotFoundException;
 import com.onlineshop.test.mapper.EmployeeMapper;
 import com.onlineshop.test.repository.EmployeeRepository;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -66,7 +65,7 @@ public class EmployeeServiceTest {
 
         verify(employeeRepository, times(1)).findAll();
         verify(employeeMapper, times(1)).toResponse(e1);
-        verify(employeeMapper, times(1)).toResponse(empCaptor.capture());
+        verify(employeeMapper, times(2)).toResponse(empCaptor.capture());
 
     }
 
@@ -108,7 +107,8 @@ public class EmployeeServiceTest {
     void getEmployeeById_ShouldReturnEmployeeResponse_WhenEmployeeExists_ButManagerDoesNotExist() {
 
         var employeeId = 1L;
-        var employee = new Employee(1L, "Bob", "developer", 1500L, "IT", null);
+        var department = new Department(1L, "SOmeThing", "New-york");
+        var employee = new Employee(1L, "Bob", "developer", 1500L, department, null);
         var employeeResponse = new EmployeeResponse(1L, "Bob", "developer", 1500L, "IT", null);
 
         when(employeeRepository.findById(employeeId)).thenReturn(Optional.of(employee));
