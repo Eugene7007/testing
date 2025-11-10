@@ -11,6 +11,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @AllArgsConstructor
@@ -26,6 +27,7 @@ public class EmployeeService {
                 .findAll()
                 .stream()
                 .map(employeeMapper::toResponse)
+                .filter(Objects::nonNull)
                 .toList();
     }
 
