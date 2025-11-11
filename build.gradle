@@ -1,5 +1,6 @@
 plugins {
 	id 'java'
+	id 'jacoco'
 	id 'org.springframework.boot' version '3.5.7'
 	id 'io.spring.dependency-management' version '1.1.7'
 }
@@ -28,25 +29,51 @@ dependencies {
 	// Validation
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 
-	// H2 Database (in-memory)'
-	runtimeOnly 'com.h2database:h2'
+	// PostgreSQL Database
+	runtimeOnly 'org.postgresql:postgresql'
 
-	// Email notifications
-	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	// Migration
+	implementation 'org.flywaydb:flyway-core:8.5.12'
 
-	// Lombok (удобство кода)
+	// Mapper
+	implementation 'org.mapstruct:mapstruct:1.4.2.Final'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.4.2.Final'
+	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+
+	// Lombok
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
-	// DevTools (горячая перезагрузка)
+	// DevTools
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
-	// Тестирование
+	// Core tests
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	// Mock external APIs
+	testImplementation 'org.wiremock:wiremock:3.13.1'
+
+	// Containers
+	testImplementation 'org.testcontainers:postgresql'
+	testImplementation 'org.testcontainers:junit-jupiter'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+
+	finalizedBy jacocoTestReport
+}
+
+// Конфигурация для Jacoco
+jacoco {
+	toolVersion = "0.8.10"
+}
+
+jacocoTestReport {
+	dependsOn test
+	reports {
+		xml.required = true
+		csv.required = false
+		html.outputLocation = file("${buildDir}/reports/jacoco")
+	}
 }

@@ -1,44 +1,65 @@
 package com.onlineshop.test.service;
 
-import com.onlineshop.test.entity.Cart;
-import com.onlineshop.test.entity.Order;
-import com.onlineshop.test.entity.Product;
+import com.onlineshop.test.dto.request.OrderRequest;
+import com.onlineshop.test.dto.response.OrderResponse;
+import com.onlineshop.test.exception.OrderNotFoundException;
+import com.onlineshop.test.mapper.OrderMapper;
 import com.onlineshop.test.repository.OrderRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.util.List;
 
 @Service
+@AllArgsConstructor
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class OrderService {
 
-    @Autowired
-    private CartService cartService;
-    @Autowired
-    private OrderRepository orderRepo;
-    @Autowired
-    private PaymentService paymentService;
-    @Autowired
-    private NotificationService notificationService;
+    OrderMapper orderMapper;
+    OrderRepository orderRepository;
 
-    public Order checkout(String customer) {
-        Cart cart = cartService.getCart(customer);
-        double total = cart.getProducts().stream().mapToDouble(Product::getPrice).sum();
+    public List<OrderResponse> getAllOrders() {
+        return orderRepository
+                .findAll()
+                .stream()
+                .map(orderMapper::toResponse)
+                .toList();
+    }
 
-        if (paymentService.processPayment(customer, total)) {
-            Order order = new Order();
-            order.setCustomer(customer);
-            order.setCreatedAt(LocalDateTime.now());
-            order.setProducts(new ArrayList<>(cart.getProducts()));
-            orderRepo.save(order);
+    public OrderResponse getOrderById(Long id) {
+        return orderRepository
+                .findById(id)
+                .map(orderMapper::toResponse)
+                .orElseThrow(() -> new OrderNotFoundException(id));
+    }
 
-            cartService.clearCart(customer);
-            notificationService.notifyCustomer(customer, "Ваш заказ оформлен. Сумма: $" + total);
-            return order;
-        } else {
-            throw new RuntimeException("Ошибка оплаты");
-        }
+    public OrderResponse createOrder(OrderRequest request) {
+        var order = orderMapper.toEntity(request);
+        orderRepository.save(order);
+
+        return orderMapper.toResponse(order);
+    }
+
+    public OrderResponse updateOrder(Long id, OrderRequest request) {
+        var existingOrder = orderRepository
+                .findById(id)
+                .orElseThrow(() -> new OrderNotFoundException(id));
+
+        existingOrder.setAmount(request.getAmount());
+        existingOrder.setUpdatedAt(LocalDateTime.now());
+        orderRepository.save(existingOrder);
+
+        return orderMapper.toResponse(existingOrder);
+    }
+
+    public void deleteOrder(Long id) {
+        orderRepository
+                .findById(id)
+                .orElseThrow(() -> new OrderNotFoundException(id));
+
+        orderRepository.deleteById(id);
     }
 }
-

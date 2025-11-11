@@ -1,8 +1,12 @@
 package com.onlineshop.test.controller;
 
-import com.onlineshop.test.entity.Product;
-import com.onlineshop.test.repository.ProductRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.onlineshop.test.dto.request.ProductRequest;
+import com.onlineshop.test.dto.response.ProductResponse;
+import com.onlineshop.test.service.ProductService;
+import jakarta.validation.Valid;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,48 +19,40 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/products")
+@AllArgsConstructor
+@RequestMapping("/api/products")
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class ProductController {
 
-    @Autowired
-    private ProductRepository productRepository;
+    ProductService productService;
 
-    // Получить все товары
+    // Получение всех продуктов
     @GetMapping
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
+    public List<ProductResponse> getAllProducts() {
+        return productService.getAllProducts();
     }
 
-    // Получить товар по ID
+    // Получение продукта по ID
     @GetMapping("/{id}")
-    public Product getProductById(@PathVariable Long id) {
-        return productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Товар не найден"));
+    public ProductResponse getProductById(@PathVariable Long id) {
+        return productService.getProductById(id);
     }
 
-    // Добавить новый товар
+    // Создание нового продукта
     @PostMapping
-    public Product createProduct(@RequestBody Product product) {
-        return productRepository.save(product);
+    public ProductResponse createProduct(@RequestBody @Valid ProductRequest request) {
+        return productService.createProduct(request);
     }
 
-    // Обновить товар
+    // Обновление продукта
     @PutMapping("/{id}")
-    public Product updateProduct(@PathVariable Long id, @RequestBody Product updatedProduct) {
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Товар не найден"));
-
-        product.setName(updatedProduct.getName());
-        product.setDescription(updatedProduct.getDescription());
-        product.setPrice(updatedProduct.getPrice());
-        product.setStock(updatedProduct.getStock());
-
-        return productRepository.save(product);
+    public ProductResponse updateProduct(@PathVariable Long id, @RequestBody @Valid ProductRequest request) {
+        return productService.updateProduct(id, request);
     }
 
-    // Удалить товар
+    // Удаление продукта
     @DeleteMapping("/{id}")
     public void deleteProduct(@PathVariable Long id) {
-        productRepository.deleteById(id);
+        productService.deleteProduct(id);
     }
 }
