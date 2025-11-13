@@ -74,7 +74,7 @@ public class EmployeeControllerTest {
     @Test
     @DisplayName("Test createEmployee - Validation happy flow")
     void createEmployee_CreatesEmployee() throws Exception {
-        EmployeeResponse response = new EmployeeResponse(1L, "John", "QA", 1500L, null, null);
+        EmployeeResponse response = new EmployeeResponse(1L, "Sanjar", "QA", 1500L, "IT", "Eugene");
 
         when(employeeService.createEmployee(any(EmployeeRequest.class))).thenReturn(response);
 
@@ -84,12 +84,13 @@ public class EmployeeControllerTest {
                             {
                                 "name": "John",
                                 "position": "QA",
-                                "salary": 1500
+                                "salary": 1500,
+                                "departmentId": 1
                             }
                         """))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(1))
-            .andExpect(jsonPath("$.name").value("John"));
+            .andExpect(jsonPath("$.name").value("Sanjar"));
     }
 
     @Test
@@ -119,12 +120,13 @@ public class EmployeeControllerTest {
                             {
                                 "name": "Sanjar v2",
                                 "position": "Dev v2",
-                                "salary": 1000L
+                                "salary": 1000,
+                                "departmentId": 1
                             }
                         """))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.name").value("Updated"))
-            .andExpect(jsonPath("$.position").value("Dev"));
+            .andExpect(jsonPath("$.name").value("Sanjar v2"))
+            .andExpect(jsonPath("$.position").value("Dev v2"));
     }
 
     @Test
