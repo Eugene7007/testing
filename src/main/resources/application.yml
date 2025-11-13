@@ -6,8 +6,8 @@ spring:
   # JPA configuration
   datasource:
     url: jdbc:postgresql://localhost:5432/bank
-    username: mark
-    password: root_pass
+    username: user
+    password: 123
     driver-class-name: org.postgresql.Driver
     tomcat:
       test-on-borrow: true
