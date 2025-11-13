@@ -18,9 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -51,10 +49,10 @@ class DepartmentServiceTest {
         var departmentResponse = new DepartmentResponse(1L, "Department_01", "loc 01");
 
         when(departmentRepository.findById(departmentId))
-                .thenReturn(Optional.of(departmentEntity));
+            .thenReturn(Optional.of(departmentEntity));
 
         when(departmentMapper.toResponse(departmentEntity))
-                .thenReturn(departmentResponse);
+            .thenReturn(departmentResponse);
 
         // Act
         var result = departmentService.getDepartmentById(departmentId);
@@ -66,8 +64,8 @@ class DepartmentServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(departmentResponse)
-                .isNotNull()
-                .isEqualTo(result);
+            .isNotNull()
+            .isEqualTo(result);
 
         // Verify
         verify(departmentRepository, times(1)).findById(departmentId);
@@ -81,10 +79,11 @@ class DepartmentServiceTest {
         var departmentId = 1L;
 
         when(departmentRepository.findById(departmentId))
-                .thenReturn(Optional.empty());
+            .thenReturn(Optional.empty());
 
         // Act + Assert
-        assertThrows(DepartmentNotFoundException.class, () -> departmentService.getDepartmentById(departmentId));
+        assertThatThrownBy(() -> departmentService.getDepartmentById(departmentId))
+            .isInstanceOf(DepartmentNotFoundException.class);
 
         // Verify
         verify(departmentRepository, times(1)).findById(departmentId);
