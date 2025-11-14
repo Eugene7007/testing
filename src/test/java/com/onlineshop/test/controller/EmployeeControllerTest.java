@@ -36,7 +36,7 @@ public class EmployeeControllerTest {
 
         when(employeeService.getAllEmployees()).thenReturn(List.of(e1 ,e2));
 
-        mockMvc.perform(get("api/employees")
+        mockMvc.perform(get("/api/employees")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)));
@@ -44,4 +44,16 @@ public class EmployeeControllerTest {
         Mockito.verify(employeeService).getAllEmployees();
     }
 
+    @Test
+    @DisplayName("Test getAllEmployees - Validation happy flow")
+    void getAllEmployees_ShouldReturnEmptyList_WhenNoEmployeesExists() throws Exception {
+        when(employeeService.getAllEmployees()).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/employees")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+
+        Mockito.verify(employeeService).getAllEmployees();
+    }
 }
