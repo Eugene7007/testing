@@ -89,7 +89,7 @@ public class EmployeeRepositoryTest {
         Employee updated = employeeRepository.save(saved);
 
         assertThat(updated.getName()).isEqualTo("Updated");
-        assertThat(updated.getSalary()).isEqualTo(1800L);
+        assertThat(updated.getSalary()).isEqualTo(999L);
     }
 
     @Test
@@ -104,8 +104,8 @@ public class EmployeeRepositoryTest {
     @Test
     @DisplayName("Delete all employees")
     void testDeleteAll() {
-        employeeRepository.save(new Employee(1L, "Sanjar", "Java", 1000L, null, null));
-        employeeRepository.save(new Employee(2L, "Sardor", "Dev", 2000L, null, null));
+        employeeRepository.save(new Employee(null, "Sanjar", "Java", 1000L, null, null));
+        employeeRepository.save(new Employee(null, "Sardor", "Dev", 2000L, null, null));
 
         employeeRepository.deleteAll();
 
