@@ -1,0 +1,219 @@
+package com.onlineshop.test.service.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.onlineshop.test.dto.request.EmployeeRequest;
+import com.onlineshop.test.dto.response.EmployeeResponse;
+import com.onlineshop.test.service.EmployeeService;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+class EmployeeControllerIntegrationTests {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private EmployeeService employeeService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    @DisplayName("1. GET /api/employees - list with department names")
+    void getEmployeesDepartmentNames() throws Exception {
+
+        List<EmployeeResponse> list = List.of(
+                new EmployeeResponse(1L, "Alisher", "QA", 3500L, "Testing", "Sardor"),
+                new EmployeeResponse(2L, "Kamila", "HR", 3000L, "Human Resources", "Dilshod")
+        );
+
+        when(employeeService.getAllEmployees()).thenReturn(list);
+
+        String json = mockMvc.perform(get("/api/employees"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        EmployeeResponse[] arr = objectMapper.readValue(json, EmployeeResponse[].class);
+
+        assertThat(arr)
+                .extracting(EmployeeResponse::departmentName)
+                .containsExactlyInAnyOrder("Testing", "Human Resources");
+    }
+
+
+    @Test
+    @DisplayName("2. GET /api/employees/{id} - check salary value")
+    void getEmployeeSalaryCheck() throws Exception {
+
+        EmployeeResponse res =
+                new EmployeeResponse(10L, "Farhod", "DevOps", 7000L, "IT", "Karim");
+
+        when(employeeService.getEmployeeById(10L)).thenReturn(res);
+
+        String json = mockMvc.perform(get("/api/employees/10"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        EmployeeResponse returned = objectMapper.readValue(json, EmployeeResponse.class);
+
+        assertThat(returned.salary()).isEqualTo(7000L);
+    }
+
+
+    @Test
+    @DisplayName("3. GET /api/employees/{id} - invalid format")
+    void getEmployeeInvalidIdFormat() throws Exception {
+        mockMvc.perform(get("/api/employees/abc"))
+                .andExpect(status().isBadRequest());
+    }
+
+
+    @Test
+    @DisplayName("4. GET /api/employees/{id} - not found returns 404")
+    void getEmployeeNotFound() throws Exception {
+
+        when(employeeService.getEmployeeById(999L))
+                .thenThrow(new RuntimeException("Not found"));
+
+        mockMvc.perform(get("/api/employees/999"))
+                .andExpect(status().isNotFound());
+    }
+
+
+    @Test
+    @DisplayName("5. POST /api/employees - successful creation returns id")
+    void createEmployeeSuccess() throws Exception {
+
+        EmployeeRequest req = new EmployeeRequest();
+        req.setName("Siroj");
+        req.setPosition("Backend");
+        req.setSalary(5500L);
+        req.setDepartmentId(3L);
+        req.setManagerId(1L);
+
+        EmployeeResponse res = new EmployeeResponse(
+                44L, "Siroj", "Backend", 5500L, "Engineering", "Akmal"
+        );
+
+        when(employeeService.createEmployee(any())).thenReturn(res);
+
+        String json = mockMvc.perform(post("/api/employees")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        EmployeeResponse returned = objectMapper.readValue(json, EmployeeResponse.class);
+
+        assertThat(returned.id()).isEqualTo(44L);
+    }
+
+
+    @Test
+    @DisplayName("6. POST /api/employees - invalid JSON returns 400")
+    void createEmployeeInvalidJson() throws Exception {
+
+        String invalid = """
+        {
+            "name": "",
+            "position": "",
+            "salary": -10,
+            "departmentId": null,
+            "managerId": 5
+        }
+        """;
+
+        mockMvc.perform(post("/api/employees")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalid))
+                .andExpect(status().isBadRequest());
+    }
+
+
+    @Test
+    @DisplayName("7. PUT /api/employees/{id} - update department")
+    void updateEmployeeDepartment() throws Exception {
+
+        EmployeeRequest req = new EmployeeRequest();
+        req.setName("Otabek");
+        req.setPosition("Manager");
+        req.setSalary(8000L);
+        req.setDepartmentId(4L);
+        req.setManagerId(2L);
+
+        EmployeeResponse res = new EmployeeResponse(
+                12L, "Otabek", "Manager", 8000L, "Sales", "Rustam"
+        );
+
+        when(employeeService.updateEmployee(eq(12L), any())).thenReturn(res);
+
+        String json = mockMvc.perform(put("/api/employees/12")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        EmployeeResponse returned = objectMapper.readValue(json, EmployeeResponse.class);
+
+        assertThat(returned.departmentName()).isEqualTo("Sales");
+    }
+
+
+    @Test
+    @DisplayName("8. PUT /api/employees/{id} - not found returns 404")
+    void updateEmployeeNotFound() throws Exception {
+
+        EmployeeRequest req = new EmployeeRequest();
+        req.setName("Cristina");
+        req.setPosition("Marketing Lead");
+        req.setSalary(9000L);
+        req.setDepartmentId(1L);
+        req.setManagerId(5L);
+
+        when(employeeService.updateEmployee(eq(200L), any()))
+                .thenThrow(new RuntimeException("Not found"));
+
+        mockMvc.perform(put("/api/employees/200")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("9. DELETE /api/employees/{id} - success")
+    void deleteEmployeeSuccess() throws Exception {
+
+        doNothing().when(employeeService).deleteEmployee(9L);
+
+        mockMvc.perform(delete("/api/employees/9"))
+                .andExpect(status().isOk());
+
+        verify(employeeService).deleteEmployee(9L);
+    }
+
+    @Test
+    @DisplayName("10. DELETE /api/employees/{id} - not found returns 404")
+    void deleteEmployeeNotFound() throws Exception {
+
+        doThrow(new RuntimeException("Not found"))
+                .when(employeeService).deleteEmployee(500L);
+
+        mockMvc.perform(delete("/api/employees/500"))
+                .andExpect(status().isNotFound());
+    }
+}
