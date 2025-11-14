@@ -129,4 +129,28 @@ public class EmployeeRepositoryTest {
         assertThat(updatedEmployee.getManager()).isNull();
     }
 
+    @Test
+    void existsById_ShouldReturnTrue() {
+        Employee saved = repository.save(employee);
+        boolean isExist = repository.existsById(saved.getId());
+        assertThat(isExist).isTrue();
+    }
+
+
+    @Test
+    void doesNotExistById_ShouldReturnFalse() {
+        var employeeId = 5L;
+        boolean isExist = repository.existsById(employeeId);
+        assertThat(isExist).isFalse();
+    }
+
+    @Test
+    void count_ShouldReturnCorrectCountOfEmployees() {
+        repository.save(employee);
+        List<Employee> list = repository.findAll();
+        long count = repository.count();
+        assertThat(list.size()).isEqualTo(count);
+    }
+
+
 }
