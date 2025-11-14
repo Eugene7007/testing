@@ -1,0 +1,166 @@
+package com.onlineshop.test.service.repository;
+
+import com.onlineshop.test.entity.Department;
+import com.onlineshop.test.entity.Employee;
+import com.onlineshop.test.repository.EmployeeRepository;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@DataJpaTest
+class EmployeeRepositoryIntNewTest {
+
+    @Autowired
+    private TestEntityManager entityManager;
+
+    @Autowired
+    private EmployeeRepository employeeRepository;
+
+    @Test
+    void saveEmployee_AssignsId() {
+        Employee emp = new Employee();
+        emp.setName("Bekzod");
+        emp.setPosition("Middle Dev");
+        emp.setSalary(20000L);
+
+        Employee saved = employeeRepository.save(emp);
+
+        assertNotNull(saved.getId());
+        assertEquals("Bekzod", saved.getName());
+    }
+
+    @Test
+    void findById_ReturnsEmployee_WhenSaved() {
+        Employee emp = new Employee(null, "Murod", "DevOps", 35000L, null, null);
+        Employee saved = entityManager.persistAndFlush(emp);
+
+        Optional<Employee> found = employeeRepository.findById(saved.getId());
+
+        assertTrue(found.isPresent());
+        assertEquals("Murod", found.get().getName());
+    }
+
+    @Test
+    void findById_ReturnsEmpty_WhenNotExists() {
+        Optional<Employee> found = employeeRepository.findById(999L);
+        assertTrue(found.isEmpty());
+    }
+
+    @Test
+    void findAll_ReturnsEmployeeList() {
+        Employee e1 = new Employee(null, "Daler", "QA", 17000L, null, null);
+        Employee e2 = new Employee(null, "Laylo", "PM", 27000L, null, null);
+
+        entityManager.persist(e1);
+        entityManager.persist(e2);
+        entityManager.flush();
+
+        List<Employee> list = employeeRepository.findAll();
+
+        assertEquals(2, list.size());
+    }
+
+    @Test
+    void findAll_ReturnsEmptyList_WhenNoneExist() {
+        List<Employee> list = employeeRepository.findAll();
+        assertTrue(list.isEmpty());
+    }
+
+    @Test
+    void countEmployees_ReturnsCorrectValue() {
+        entityManager.persist(new Employee(null, "A", "HR", 10000L, null, null));
+        entityManager.persist(new Employee(null, "B", "Lead", 20000L, null, null));
+        entityManager.flush();
+
+        long count = employeeRepository.count();
+        assertEquals(2, count);
+    }
+
+    @Test
+    void existsById_ReturnsTrue_WhenExists() {
+        Employee emp = new Employee(null, "Jamshid", "HR", 15000L, null, null);
+        Employee saved = entityManager.persistAndFlush(emp);
+
+        assertTrue(employeeRepository.existsById(saved.getId()));
+    }
+
+    @Test
+    void existsById_ReturnsFalse_WhenNotExists() {
+        assertFalse(employeeRepository.existsById(5555L));
+    }
+
+    @Test
+    void deleteById_RemovesEmployee() {
+        Employee e = new Employee(null, "Removed", "Temp", 3000L, null, null);
+        Employee saved = entityManager.persistAndFlush(e);
+
+        employeeRepository.deleteById(saved.getId());
+        entityManager.flush();
+
+        assertFalse(employeeRepository.findById(saved.getId()).isPresent());
+    }
+
+    @Test
+    void deleteEntity_ReducesCount() {
+        Employee e = new Employee(null, "DeleteTest", "Intern", 5000L, null, null);
+        Employee saved = entityManager.persistAndFlush(e);
+
+        employeeRepository.delete(saved);
+        entityManager.flush();
+
+        assertEquals(0, employeeRepository.count());
+    }
+
+    @Test
+    void updateEmployee_SavesNewValues() {
+        Employee e = new Employee(null, "OldUser", "OldPos", 11000L, null, null);
+        Employee saved = entityManager.persistAndFlush(e);
+
+        saved.setName("UpdatedUser");
+        saved.setPosition("UpdatedPos");
+        saved.setSalary(18000L);
+
+        employeeRepository.save(saved);
+
+        Employee updated = entityManager.find(Employee.class, saved.getId());
+
+        assertEquals("UpdatedUser", updated.getName());
+        assertEquals("UpdatedPos", updated.getPosition());
+        assertEquals(18000L, updated.getSalary());
+    }
+
+    @Test
+    void saveAll_InsertsMultipleEmployees() {
+        Employee e1 = new Employee(null, "Qodir", "Dev", 8000L, null, null);
+        Employee e2 = new Employee(null, "Nigora", "QA", 9000L, null, null);
+
+        employeeRepository.saveAll(List.of(e1, e2));
+        entityManager.flush();
+
+        assertEquals(2, employeeRepository.count());
+    }
+
+    @Test
+    void flush_AppliesChangesImmediately() {
+        Employee e = new Employee(null, "TempName", "TempRole", 7000L, null, null);
+        Employee saved = entityManager.persistAndFlush(e);
+
+        saved.setName("NewFlushedName");
+        employeeRepository.save(saved);
+        entityManager.flush();
+
+        Employee updated = entityManager.find(Employee.class, saved.getId());
+        assertEquals("NewFlushedName", updated.getName());
+    }
+
+    @Test
+    void repositoryStartsWithEmptyDatabase() {
+        assertEquals(0, employeeRepository.count());
+    }
+}
